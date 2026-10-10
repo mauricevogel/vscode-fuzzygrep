@@ -126,7 +126,9 @@ function paintPreview(value?: Preview): void {
     row.append(number, text);
     preview.append(row);
   }
-  preview.scrollTop = 0;
+  const currentLine = preview.querySelector<HTMLElement>('.current-line');
+  if (currentLine) currentLine.scrollIntoView({ block: 'center', inline: 'nearest' });
+  else preview.scrollTop = 0;
 }
 
 function select(index: number): void {

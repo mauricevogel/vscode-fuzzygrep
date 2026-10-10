@@ -133,3 +133,66 @@ test('bundled ripgrep searches Unicode separators and long lines across workspac
     await rm(second, { recursive: true, force: true });
   }
 });
+
+test('base64 lines keep original byte offsets around malformed UTF-8', async () => {
+  for (const prefix of [
+    Buffer.from([0x61, 0xe9, 0x20]),
+    Buffer.from([0xe0, 0x80, 0x80, 0xed, 0xa0, 0x80, 0xf4, 0x90, 0x80, 0x80]),
+    Buffer.concat([Buffer.from('😀é'), Buffer.from([0xf0, 0x9f, 0x92]), Buffer.from(' ')])
+  ]) {
+    const run = harness();
+    const bytes = Buffer.concat([prefix, Buffer.from('needle\n')]);
+    await run.close(JSON.stringify({ type: 'match', data: {
+      path: { bytes: Buffer.from('./fixture.txt').toString('base64') },
+      lines: { bytes: bytes.toString('base64') }, line_number: 1,
+      submatches: [{ start: prefix.length, end: prefix.length + 6 }]
+    } }) + '\n');
+    assert.deepEqual(run.completions, [undefined]);
+    const match = run.matches[0];
+    const column = prefix.toString('utf8').length;
+    assert.equal(match.text, bytes.toString('utf8').trimEnd());
+    assert.equal(match.column, column);
+    assert.deepEqual(match.ranges, [{ start: column, end: column + 6 }]);
+    assert.equal(match.text.slice(match.ranges[0].start, match.ranges[0].end), 'needle');
+  }
+});
+
+test('byte-mode offsets inside UTF-8 sequences agree with decoded prefixes', async () => {
+  const run = harness();
+  const bytes = Buffer.concat([
+    Buffer.from('aé中😀'),
+    Buffer.from([0xf0, 0x9f, 0x92, 0x20, 0xe0, 0x80, 0x80, 0xed, 0xa0, 0x80, 0xff])
+  ]);
+  const submatches = Array.from({ length: bytes.length + 1 }, (_, start) => ({ start, end: start }));
+  await run.close(JSON.stringify({ type: 'match', data: {
+    path: { text: './fixture.txt' }, lines: { bytes: bytes.toString('base64') }, line_number: 1, submatches
+  } }) + '\n');
+  assert.deepEqual(run.completions, [undefined]);
+  assert.deepEqual(run.matches[0].ranges, submatches.map(({ start }) => {
+    const column = bytes.subarray(0, start).toString('utf8').length;
+    return { start: column, end: column };
+  }));
+});
+
+test('dense submatches on a long line convert offsets without decoding repeated prefixes', async () => {
+  const run = harness();
+  const text = 'x'.repeat(80000);
+  const submatches = Array.from(text, (_, start) => ({ start, end: start + 1 }));
+  const json = JSON.stringify({ type: 'match', data: {
+    path: { text: './fixture.txt' }, lines: { text }, line_number: 1, submatches
+  } }) + '\n';
+  const original = Buffer.prototype.toString;
+  let decodedBytes = 0;
+  Buffer.prototype.toString = function (encoding, start = 0, end = this.length) {
+    if (encoding === 'utf8') decodedBytes += end - start;
+    return original.call(this, encoding, start, end);
+  };
+  try {
+    await run.close(json);
+  } finally {
+    Buffer.prototype.toString = original;
+  }
+  assert.deepEqual(run.completions, [undefined]);
+  assert.deepEqual(run.matches[0].ranges, submatches);
+  assert(decodedBytes < json.length + text.length * 2, 'decoding work must stay proportional to the input');
+});

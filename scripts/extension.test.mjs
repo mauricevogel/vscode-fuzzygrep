@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -83,6 +85,85 @@ test('shortcut opens hidden views, refocuses visible unfocused views, and hides 
     assert.equal(posted.findLast((message) => message.type === 'state').state.query, '');
     disposeView();
     await checkCommand('fuzzygrep.search.focus');
+  } finally {
+    for (const subscription of context.subscriptions) subscription.dispose();
+  }
+});
+
+test('overlapping roots deduplicate by path and line before batching and the result limit, and reset per search', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const children = [];
+  const posted = [];
+  let provider;
+  const mock = {
+    Uri: {
+      joinPath: (base, ...paths) => uri(join(base.fsPath, ...paths)),
+      file: uri
+    },
+    extensions: { all: [], onDidChange: disposable },
+    workspace: {
+      workspaceFolders: [
+        { uri: { ...uri(root), scheme: 'file' }, name: 'workspace' },
+        { uri: { ...uri(join(root, 'src')), scheme: 'file' }, name: 'src' }
+      ],
+      onDidChangeWorkspaceFolders: disposable, onDidChangeConfiguration: disposable,
+      fs: { stat: async () => ({ size: 6 * 1024 * 1024 }) }
+    },
+    window: { registerWebviewViewProvider: (_id, value) => { provider = value; return disposable(); } },
+    commands: { registerCommand: disposable }
+  };
+  const spawn = () => {
+    const child = new EventEmitter();
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.kill = () => { child.killed = true; return true; };
+    children.push(child);
+    return child;
+  };
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', 'process', compiled.outputFiles[0].text)(
+    (id) => id === 'vscode' ? mock : id === 'node:child_process' ? { spawn } : require(id),
+    module, module.exports, { ...process, platform: 'darwin', arch: 'arm64' }
+  );
+  const context = { extensionUri: uri(root), subscriptions: [] };
+  module.exports.activate(context);
+  provider.view = { webview: { postMessage: (message) => { posted.push(message); } } };
+  const emit = (child, path, line) => child.stdout.write(JSON.stringify({
+    type: 'match', data: {
+      path: { text: path }, lines: { text: 'needle\n' }, line_number: line,
+      submatches: [{ start: 0, end: 6 }]
+    }
+  }) + '\n');
+  try {
+    provider.startSearch('needle', 1);
+    t.mock.timers.tick(150);
+    assert.equal(children.length, 2);
+    emit(children[0], './src/shared.txt', 1);
+    emit(children[1], './shared.txt', 1);
+    emit(children[1], './shared.txt', 2);
+    emit(children[0], './other.txt', 1);
+    t.mock.timers.tick(50);
+    assert.equal(provider.state.results.length, 3, 'distinct lines and paths must remain');
+    assert.equal(posted.filter((message) => message.type === 'results').flatMap((message) => message.matches).length, 3);
+
+    // Duplicate lines must not consume the limit, including after a batch flush.
+    for (let line = 3; line <= 4997; line++) emit(children[0], './src/shared.txt', line);
+    for (let line = 1; line <= 4997; line++) emit(children[1], './shared.txt', line);
+    assert.equal(provider.state.results.length, 4998);
+    assert.equal(provider.state.searching, true);
+    assert.equal(provider.state.truncated, false);
+    emit(children[1], './shared.txt', 4998);
+    emit(children[1], './shared.txt', 4999);
+    assert.equal(provider.state.results.length, 5000);
+    assert.equal(provider.state.truncated, true);
+    assert(children.every((child) => child.killed));
+    assert.equal(posted.filter((message) => message.type === 'results').flatMap((message) => message.matches).length, 5000);
+
+    provider.startSearch('needle', 2);
+    t.mock.timers.tick(150);
+    emit(children[2], './src/shared.txt', 1);
+    emit(children[3], './shared.txt', 1);
+    assert.equal(provider.state.results.length, 1, 'deduplication must reset for each query');
   } finally {
     for (const subscription of context.subscriptions) subscription.dispose();
   }

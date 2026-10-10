@@ -127,6 +127,7 @@ class SearchView implements vscode.WebviewViewProvider, vscode.Disposable {
     this.post({ type: 'state', state: this.state });
     if (!query) return;
     const version = this.searchVersion;
+    const seen = new Map<string, Set<number>>();
     this.debounce = setTimeout(() => {
       if (version !== this.searchVersion) return;
       if (process.platform !== 'darwin' || process.arch !== 'arm64') {
@@ -141,6 +142,10 @@ class SearchView implements vscode.WebviewViewProvider, vscode.Disposable {
       this.search = new RipgrepSearch(join(this.extensionUri.fsPath, 'dist/bin/rg'), query, folders.map((folder) => ({ path: folder.uri.fsPath, name: folder.name })), {
         match: (match) => {
           if (version !== this.searchVersion || !this.state.searching) return;
+          let lines = seen.get(match.path);
+          if (lines?.has(match.line)) return;
+          if (!lines) seen.set(match.path, lines = new Set());
+          lines.add(match.line);
           this.state.results.push(match);
           this.pending.push(match);
           if (this.state.selected === -1) this.state.selected = 0;
