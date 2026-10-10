@@ -1,0 +1,13 @@
+**
+!package.json
+!README.md
+!LICENSE
+!dist/*.js
+!dist/*.map
+!dist/*.css
+!dist/*.wasm
+!dist/*.txt
+!dist/bin/**
+!media/search.svg
+!THIRD_PARTY_NOTICES.md
+dist/*.vsix

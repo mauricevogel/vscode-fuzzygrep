@@ -1,0 +1,51 @@
+{
+  "name": "fuzzygrep",
+  "displayName": "Fuzzygrep",
+  "description": "Fast workspace content search with a keyboard-driven panel and match preview.",
+  "version": "0.1.0",
+  "publisher": "local-dev",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.95.0", "node": ">=22" },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "extensionKind": ["workspace"],
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": { "supported": true }
+  },
+  "contributes": {
+    "commands": [
+      { "command": "fuzzygrep.toggle", "title": "Toggle Search Panel", "category": "Fuzzygrep" },
+      { "command": "fuzzygrep.clearAndHide", "title": "Clear Search and Hide Panel", "category": "Fuzzygrep" }
+    ],
+    "keybindings": [
+      { "command": "fuzzygrep.toggle", "key": "ctrl+alt+shift+f", "mac": "ctrl+alt+cmd+shift+f" }
+    ],
+    "viewsContainers": {
+      "panel": [{ "id": "fuzzygrep", "title": "Fuzzygrep", "icon": "media/search.svg" }]
+    },
+    "views": {
+      "fuzzygrep": [{ "type": "webview", "id": "fuzzygrep.search", "name": "Search" }]
+    }
+  },
+  "scripts": {
+    "build": "npm run typecheck && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test scripts/*.test.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "vscode:prepublish": "npm run build",
+    "package": "node scripts/package.mjs",
+    "install:vscode": "node scripts/install.mjs vscode",
+    "install:cursor": "node scripts/install.mjs cursor"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.95.0",
+    "@vscode/ripgrep": "^1.18.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.9",
+    "jsonc-parser": "^3.3.1",
+    "typescript": "^5.9.2"
+  }
+}

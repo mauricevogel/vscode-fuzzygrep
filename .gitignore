@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.vsix
+.DS_Store
+.npm-cache/
+
+# IDEs
+.vscode/
+.cursor/
+.idea/
+.cursorrules

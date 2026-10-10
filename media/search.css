@@ -1,0 +1,36 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; display: flex; flex-direction: column; padding: 10px 12px 6px; color: var(--vscode-foreground); background: var(--vscode-panel-background); font: var(--vscode-font-size) var(--vscode-font-family); }
+header { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+label { white-space: nowrap; font-weight: 600; }
+input { min-width: 0; flex: 1; padding: 6px 8px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); font: inherit; }
+input::placeholder { color: var(--vscode-input-placeholderForeground); }
+input:focus, #results:focus-visible, #preview:focus-visible, button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+button { padding: 0 8px; font-size: 22px; color: var(--vscode-foreground); background: transparent; border: 0; cursor: pointer; }
+button:hover { background: var(--vscode-toolbar-hoverBackground); }
+#status { padding: 7px 0; min-height: 28px; color: var(--vscode-descriptionForeground); white-space: pre-wrap; max-height: 85px; overflow: auto; flex-shrink: 0; }
+#status.error { color: var(--vscode-errorForeground); }
+main { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(200px, 1fr) minmax(240px, 1.2fr); margin-top: 8px; border-top: 1px solid var(--vscode-panel-border); border-bottom: 1px solid var(--vscode-panel-border); }
+#results-pane { overflow: auto; min-width: 0; }
+#results { min-height: 100%; padding-bottom: 4px; }
+#empty { padding: 18px 8px; color: var(--vscode-descriptionForeground); }
+#empty:not([hidden]) + #results { min-height: 0; }
+.match { padding: 4px 8px; cursor: pointer; white-space: pre; overflow: hidden; text-overflow: ellipsis; font-family: var(--vscode-editor-font-family, monospace); font-size: var(--vscode-editor-font-size, 12px); }
+.match:hover { background: var(--vscode-list-hoverBackground); }
+.match.selected { background: var(--vscode-list-inactiveSelectionBackground); color: var(--vscode-list-inactiveSelectionForeground); }
+#results:focus .match.selected { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+mark { color: inherit; background: var(--vscode-editor-findMatchHighlightBackground); border: 1px solid var(--vscode-editor-findMatchHighlightBorder, transparent); border-radius: 2px; }
+#preview-pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--vscode-panel-border); }
+#preview-title { padding: 8px 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+#preview { min-height: 0; flex: 1; overflow: auto; padding: 4px 0 8px; color: var(--vscode-editor-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-editor-font-family, monospace); font-size: var(--vscode-editor-font-size, 12px); line-height: 1.6; tab-size: 4; }
+.preview-line { display: flex; gap: 16px; padding: 0 12px; white-space: pre; min-width: max-content; }
+.current-line { background: var(--vscode-editor-lineHighlightBackground); }
+.line-number { min-width: 40px; text-align: right; color: var(--vscode-editorLineNumber-foreground); user-select: none; flex-shrink: 0; }
+.preview-message { padding: 6px 12px; color: var(--vscode-descriptionForeground); font-family: var(--vscode-font-family); }
+.syntax-italic { font-style: italic; }
+.syntax-bold { font-weight: bold; }
+.syntax-underline { text-decoration: underline; }
+.syntax-strikethrough { text-decoration: line-through; }
+.syntax-underline.syntax-strikethrough { text-decoration: underline line-through; }
+footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; padding-top: 6px; font-size: 11px; color: var(--vscode-descriptionForeground); flex-shrink: 0; }
+@media (max-width: 620px) { label { display: none; } main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } #preview-pane { border-left: 0; border-top: 1px solid var(--vscode-panel-border); } }
