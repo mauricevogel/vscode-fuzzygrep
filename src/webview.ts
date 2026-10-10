@@ -7,8 +7,8 @@ const list = document.getElementById('results') as HTMLDivElement;
 const pane = document.getElementById('results-pane') as HTMLElement;
 const status = document.getElementById('status') as HTMLDivElement;
 const empty = document.getElementById('empty') as HTMLDivElement;
+const emptyMessage = document.getElementById('empty-message') as HTMLDivElement;
 const preview = document.getElementById('preview') as HTMLDivElement;
-const previewTitle = document.getElementById('preview-title') as HTMLDivElement;
 const syntaxColors = document.getElementById('syntax-colors') as HTMLStyleElement;
 const validColor = /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i;
 let state: SearchState = { revision: 0, query: '', results: [], selected: -1, searching: false, truncated: false };
@@ -65,10 +65,17 @@ function append(matches: SearchMatch[], offset: number): void {
     row.className = 'match';
     row.setAttribute('role', 'option');
     row.setAttribute('aria-selected', 'false');
-    row.setAttribute('aria-label', `${match.label}, line ${match.line + 1}`);
+    row.setAttribute('aria-label', `${match.label}, line ${match.line + 1}: ${match.text}`);
     row.dataset.index = String(index);
-    row.textContent = `${match.label}:${match.line + 1}`;
-    row.title = row.textContent;
+    const location = document.createElement('span');
+    location.className = 'match-location';
+    location.textContent = `${match.label}:${match.line + 1}`;
+    const code = document.createElement('span');
+    code.className = 'match-code';
+    const snippet = match.text.trimStart();
+    code.append(highlighted(snippet, match.ranges, match.text.length - snippet.length));
+    row.append(location, code);
+    row.title = `${location.textContent}  ${match.text}`;
     fragment.append(row);
     rows.push(row);
   }
@@ -93,7 +100,7 @@ function paintStatus(): void {
   status.classList.toggle('error', Boolean(state.error));
   status.textContent = state.error ?? (state.searching ? `Searching… ${count.toLocaleString()} matching lines` : state.query ? `${count.toLocaleString()} matching lines in ${files.toLocaleString()} files${state.truncated ? ' · Result limit reached; narrow your query.' : ''}` : 'Regex · smart case · respects ripgrep ignore rules');
   empty.hidden = count > 0;
-  empty.textContent = state.error ? 'Update your query or workspace and try again.' : state.searching ? 'Searching workspace…' : state.query ? 'No matching lines.' : 'Type a query to search workspace contents.';
+  emptyMessage.textContent = state.error ? 'Update your query or workspace and try again.' : state.searching ? 'Searching workspace…' : state.query ? 'No matching lines.' : 'Type a query to search workspace contents.';
   list.setAttribute('aria-busy', String(state.searching));
 }
 
@@ -102,10 +109,8 @@ function paintPreview(value?: Preview): void {
   syntaxColors.textContent = [...colors].filter((color): color is string => Boolean(color && validColor.test(color)))
     .map((color) => `.syntax-${color.slice(1)} { color: ${color}; }`).join('\n');
   preview.replaceChildren();
-  previewTitle.textContent = value?.label ?? 'Preview';
-  previewTitle.title = value?.label ?? '';
   if (!value) {
-    preview.textContent = state.selected >= 0 ? 'Loading preview…' : 'Select a match to preview its context.';
+    if (state.selected >= 0) preview.textContent = 'Loading preview…';
     return;
   }
   if (value.error) {
@@ -180,12 +185,11 @@ document.addEventListener('keydown', (event) => {
     if (state.selected >= 0) vscode.postMessage({ type: 'open', index: state.selected, beside: event.altKey, revision: state.revision });
     return;
   }
-  const inResults = document.activeElement === list;
   const plainKey = !event.metaKey && !event.ctrlKey && !event.altKey;
-  if (plainKey && (event.key === 'ArrowDown' || (inResults && event.key === 'j'))) {
+  if (plainKey && event.key === 'ArrowDown') {
     event.preventDefault();
     select(state.selected + 1);
-  } else if (plainKey && (event.key === 'ArrowUp' || (inResults && event.key === 'k'))) {
+  } else if (plainKey && event.key === 'ArrowUp') {
     event.preventDefault();
     select(state.selected - 1);
   }

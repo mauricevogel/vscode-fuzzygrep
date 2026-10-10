@@ -61,14 +61,13 @@ results, selected match, and results scroll position during the editor session.
 | Key | Action |
 | --- | --- |
 | Up / Down | Select the previous / next match and update the preview |
-| J / K | Next / previous match when the results list has focus |
 | Enter | Open the selected match at its line and column |
 | Alt + Enter | Open the selected match in another editor pane |
 | Escape | Clear the query and results and hide the panel |
 | Tab | Move between the query, clear button, results, and preview |
 
-Click a matching line to select it; double-click to open it. J/K remain normal
-characters in the query input. Search is debounced as you type and streams
+Click a matching line to select it; double-click to open it.
+Search is debounced as you type and streams
 results from all local workspace folders. Queries are regular expressions,
 with smart case (lowercase queries are case insensitive; uppercase makes them
 case sensitive). Invalid regexes and ripgrep errors appear in the panel.
@@ -76,8 +75,9 @@ Ripgrep's normal ignore rules apply, including `.gitignore`, `.ignore`, and
 `.rgignore`. Hidden files and binary files are skipped by default. Searches
 read saved file contents on disk.
 
-The results list shows one `path:line` entry per matching line, with the total
-below the results and preview panes. The panel shows at most 5,000 matching
+The results list shows `path:line` followed by the matching source line, with
+matches highlighted and the total below the results and preview panes.
+Keyboard hints appear in the empty results area. The panel shows at most 5,000 matching
 lines and asks you to narrow the query when the limit is reached. Preview uses
 the installed language extensions' TextMate grammars and the active color theme's
 token colors and font styles, including `editor.tokenColorCustomizations`.
@@ -128,15 +128,17 @@ In both editors on macOS arm64:
    Focus the editor while the panel stays visible, then press the shortcut:
    it should focus the search input. Press it again to hide the panel.
 2. Press Escape, reopen, and confirm the search is empty.
-3. Use arrows from the input, then Tab to the results and use J/K. Type J/K
-   in the query input and confirm they appear in the query.
+3. Use arrows from the input, then Tab to the results and use arrows again.
+   Type J/K in the query input and confirm they appear in the query.
 4. Open a result with Enter and with Alt + Enter; check its line and column,
    including a match following emoji or accented characters.
 5. Search a regex, an invalid regex, a string with no matches, and a string
    present only in ignored files. Check status and error messages.
 6. Change a query during a large search and confirm that results from the old
    search do not reappear. Search across a workspace with multiple folders.
-7. Confirm that result rows show only `path:line` and totals sit below both
-   panes. Preview TypeScript, Python, and HTML, including a multiline comment
-   or string beginning above the preview. Switch between custom light and dark
+7. Confirm that result rows show `path:line` followed by the matching source
+   line, with matches highlighted, and totals sit below both panes. Check that
+   keyboard hints appear in the empty results area and the empty preview has
+   no heading or placeholder. Preview TypeScript, Python, and HTML, including a
+   multiline comment or string beginning above the preview. Switch between custom light and dark
    themes while the preview is open, and check token color customizations.

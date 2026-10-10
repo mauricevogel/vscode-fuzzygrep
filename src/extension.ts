@@ -236,10 +236,9 @@ class SearchView implements vscode.WebviewViewProvider, vscode.Disposable {
 <link rel="stylesheet" href="${stylesheet}"><style id="syntax-colors" nonce="${nonce}"></style><title>Fuzzygrep</title></head>
 <body>
   <header><label for="query">Search workspace</label><input id="query" type="text" placeholder="Search contents with a regex…" spellcheck="false" autocomplete="off" aria-describedby="status"><button id="clear" title="Clear search and hide (Escape)" aria-label="Clear search and hide panel">×</button></header>
-  <main><section id="results-pane" aria-label="Search results"><div id="empty">Type a query to search workspace contents.</div><div id="results" role="listbox" aria-label="Matching lines" tabindex="0"></div></section>
-  <section id="preview-pane" aria-label="Selected match preview"><div id="preview-title">Preview</div><div id="preview" tabindex="0">Select a match to preview its context.</div></section></main>
+  <main><section id="results-pane" aria-label="Search results"><div id="empty"><div id="empty-message">Type a query to search workspace contents.</div><div class="shortcuts"><span>↑ ↓ navigate matches</span><span>Enter open</span><span>Alt Enter split</span><span>Esc clear &amp; hide</span></div></div><div id="results" role="listbox" aria-label="Matching lines" tabindex="0"></div></section>
+  <section id="preview-pane" aria-label="Selected match preview"><div id="preview" tabindex="0"></div></section></main>
   <div id="status" role="status" aria-live="polite"></div>
-  <footer><span>↑ ↓ navigate · J K in results</span><span>Enter open · Alt Enter split · Esc clear &amp; hide</span></footer>
   <script nonce="${nonce}" src="${script}"></script>
 </body></html>`;
   }
